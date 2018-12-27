@@ -7,8 +7,11 @@ using RabbitMQ.Client.Events;
 using System.Collections.Concurrent;
 using System.Threading;
 using System.Text;
+using System.Runtime.Serialization.Formatters.Binary;
+using System.IO;
+using RabbitClasses.MessagingModels.Content;
 
-namespace ProofOfConceptRabbitMQ.ServiceProviders
+namespace CacheService.Providers
 {
 	public class ContentProvider
 	{
@@ -18,7 +21,7 @@ namespace ProofOfConceptRabbitMQ.ServiceProviders
 		private readonly IModel channel;
 		private readonly string replyQueueName = "amq.rabbitmq.reply-to";
 		private readonly EventingBasicConsumer consumer;
-		private readonly ConcurrentDictionary<string, TaskCompletionSource<string>> callbackMapper = new ConcurrentDictionary<string, TaskCompletionSource<string>>();
+		private readonly ConcurrentDictionary<string, TaskCompletionSource<ContentServiceResponse>> callbackMapper = new ConcurrentDictionary<string, TaskCompletionSource<ContentServiceResponse>>();
 
 		public ContentProvider()
 		{
@@ -29,27 +32,37 @@ namespace ProofOfConceptRabbitMQ.ServiceProviders
 			consumer = new EventingBasicConsumer(channel);
 			consumer.Received += (model, ea) =>
 			{
-				if (!callbackMapper.TryRemove(ea.BasicProperties.CorrelationId, out TaskCompletionSource<string> tcs))
+				if (!callbackMapper.TryRemove(ea.BasicProperties.CorrelationId, out TaskCompletionSource<ContentServiceResponse> tcs))
 					return;
 				var body = ea.Body;
-				var response = Encoding.UTF8.GetString(body);
+				ContentServiceResponse response;
+				var formatter = new BinaryFormatter();
+				using (var stream = new MemoryStream(body))
+					response = (ContentServiceResponse)formatter.Deserialize(stream);
+				
 				tcs.TrySetResult(response);
 			};
 		}
 
-		public Task<string> GetContentAsync(string message, CancellationToken cancellationToken = default(CancellationToken))
+		public Task<ContentServiceResponse> GetContentAsync(ContentRequest request, CancellationToken cancellationToken = default(CancellationToken))
 		{
 			IBasicProperties props = channel.CreateBasicProperties();
 			var correlationId = Guid.NewGuid().ToString();
 			props.CorrelationId = correlationId;
 			props.ReplyTo = replyQueueName;
-			var messageBytes = Encoding.UTF8.GetBytes(message);
-			var tcs = new TaskCompletionSource<string>();
+			Byte[] messageBytes;
+			var formatter = new BinaryFormatter();
+			using (var stream = new MemoryStream())
+			{
+				formatter.Serialize(stream, request);
+				messageBytes = stream.ToArray();
+
+			}
+			var tcs = new TaskCompletionSource<ContentServiceResponse>();
 			callbackMapper.TryAdd(correlationId, tcs);
 
-			channel.BasicPublish(exchange: "", routingKey: QUEUE_NAME, mandatory: false, basicProperties: props, body: messageBytes);
-
 			channel.BasicConsume(consumer: consumer, queue: replyQueueName, autoAck: true);
+			channel.BasicPublish(exchange: "", routingKey: QUEUE_NAME, mandatory: false, basicProperties: props, body: messageBytes);
 
 			cancellationToken.Register(() => callbackMapper.TryRemove(correlationId, out var tmp));
 			return tcs.Task;
@@ -61,3 +74,4 @@ namespace ProofOfConceptRabbitMQ.ServiceProviders
 		}
 	}
 }
+

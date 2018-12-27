@@ -12,9 +12,24 @@ namespace CacheService
 {
 	public partial class Form1 : Form
 	{
+		private CacheServiceManager cacheService;
+
 		public Form1()
 		{
 			InitializeComponent();
+		}
+
+		protected override void OnLoad(EventArgs e)
+		{
+			cacheService = new CacheServiceManager();
+			base.OnLoad(e);
+		}
+
+		protected override void OnClosing(CancelEventArgs e)
+		{
+			cacheService.Close();
+			cacheService = null;
+			base.OnClosing(e);
 		}
 	}
 }

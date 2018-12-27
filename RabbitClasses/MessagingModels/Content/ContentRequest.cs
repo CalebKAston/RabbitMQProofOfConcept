@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using System.Text;
 
-namespace ProofOfConceptRabbitMQ.Models
+namespace RabbitClasses.MessagingModels.Content
 {
+	[Serializable]
 	public class ContentRequest
 	{
 		public string ContentKey { get; set; }

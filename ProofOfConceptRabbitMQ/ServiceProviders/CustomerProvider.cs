@@ -1,4 +1,5 @@
-﻿using ProofOfConceptRabbitMQ.Models;
+﻿using RabbitClasses.MessagingModels;
+using RabbitClasses.MessagingModels.Customer;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using System;
@@ -43,102 +44,6 @@ namespace ProofOfConceptRabbitMQ.ServiceProviders
 				tcs.TrySetResult(response);
 			};
 		}
-		
-		//public Task<CustomerServiceResponse> GetCustomerAsync(CustomerRequest request, CancellationToken cancellationToken = default(CancellationToken))
-		//{
-		//	var props = channel.CreateBasicProperties();
-		//	var correlationId = Guid.NewGuid().ToString();
-		//	props.CorrelationId = correlationId;
-		//	props.ReplyTo = replyQueueName;
-		//	var tcs = new TaskCompletionSource<CustomerServiceResponse>();
-		//	var formatter = new BinaryFormatter();
-		//	Byte[] messageBytes;
-		//	using (var stream = new MemoryStream())
-		//	{
-		//		formatter.Serialize(stream, request);
-		//		messageBytes = stream.ToArray();
-		//	}
-		//	callbackMapper.TryAdd(correlationId, tcs);
-
-		//	channel.BasicPublish(exchange: "", routingKey: QUEUE_NAME, mandatory: false, basicProperties: props, body: messageBytes);
-
-		//	channel.BasicConsume(consumer: consumer, queue: replyQueueName, autoAck: true);
-
-		//	cancellationToken.Register(() => callbackMapper.TryRemove(correlationId, out var tmp));
-		//	return tcs.Task;
-		//}
-		
-		//public Task<CustomerServiceResponse> CreateCustomerAsync(CustomerRequest request, CancellationToken cancellationToken = default(CancellationToken))
-		//{
-		//	var props = channel.CreateBasicProperties();
-		//	var correlationId = Guid.NewGuid().ToString();
-		//	props.CorrelationId = correlationId;
-		//	props.ReplyTo = replyQueueName;
-		//	var tcs = new TaskCompletionSource<CustomerServiceResponse>();
-		//	var formatter = new BinaryFormatter();
-		//	Byte[] messageBytes;
-		//	using (var stream = new MemoryStream())
-		//	{
-		//		formatter.Serialize(stream, request);
-		//		messageBytes = stream.ToArray();
-		//	}
-		//	callbackMapper.TryAdd(correlationId, tcs);
-
-		//	channel.BasicPublish(exchange: "", routingKey: QUEUE_NAME, mandatory: false, basicProperties: props, body: messageBytes);
-
-		//	channel.BasicConsume(consumer: consumer, queue: replyQueueName, autoAck: true);
-
-		//	cancellationToken.Register(() => callbackMapper.TryRemove(correlationId, out var tmp));
-		//	return tcs.Task;
-		//}
-		
-		//public Task<CustomerServiceResponse> DeleteCustomerAsync(CustomerRequest request, CancellationToken cancellationToken = default(CancellationToken))
-		//{
-		//	var props = channel.CreateBasicProperties();
-		//	var correlationId = Guid.NewGuid().ToString();
-		//	props.CorrelationId = correlationId;
-		//	props.ReplyTo = replyQueueName;
-		//	var tcs = new TaskCompletionSource<CustomerServiceResponse>();
-		//	var formatter = new BinaryFormatter();
-		//	Byte[] messageBytes;
-		//	using (var stream = new MemoryStream())
-		//	{
-		//		formatter.Serialize(stream, request);
-		//		messageBytes = stream.ToArray();
-		//	}
-		//	callbackMapper.TryAdd(correlationId, tcs);
-
-		//	channel.BasicPublish(exchange: "", routingKey: QUEUE_NAME, mandatory: false, basicProperties: props, body: messageBytes);
-
-		//	channel.BasicConsume(consumer: consumer, queue: replyQueueName, autoAck: true);
-
-		//	cancellationToken.Register(() => callbackMapper.TryRemove(correlationId, out var tmp));
-		//	return tcs.Task;
-		//}
-		
-		//public Task<CustomerServiceResponse> UpdateCustomerAsync(CustomerRequest request, CancellationToken cancellationToken = default(CancellationToken))
-		//{
-		//	var props = channel.CreateBasicProperties();
-		//	var correlationId = Guid.NewGuid().ToString();
-		//	props.CorrelationId = correlationId;
-		//	props.ReplyTo = replyQueueName;
-		//	var tcs = new TaskCompletionSource<CustomerServiceResponse>();
-		//	var formatter = new BinaryFormatter();
-		//	Byte[] messageBytes;
-		//	using (var stream = new MemoryStream())
-		//	{
-		//		formatter.Serialize(stream, request);
-		//		messageBytes = stream.ToArray();
-		//	}
-		//	callbackMapper.TryAdd(correlationId, tcs);
-
-		//	channel.BasicPublish(exchange: "", routingKey: QUEUE_NAME, mandatory: false, basicProperties: props, body: messageBytes);
-
-		//	channel.BasicConsume(consumer: consumer, queue: replyQueueName, autoAck: true);
-
-		//	cancellationToken.Register(() => callbackMapper.TryRemove(correlationId, out var tmp));
-		//	return tcs.Task;
-		//}
 
 		public Task<CustomerServiceResponse> SendRequestAsync(CustomerRequest request, RestActions restAction, CancellationToken cancellationToken = default(CancellationToken))
 		{
@@ -157,9 +62,9 @@ namespace ProofOfConceptRabbitMQ.ServiceProviders
 			}
 			callbackMapper.TryAdd(correlationId, tcs);
 
+			channel.BasicConsume(consumer: consumer, queue: replyQueueName, autoAck: true);
 			channel.BasicPublish(exchange: "", routingKey: QUEUE_NAME, mandatory: false, basicProperties: props, body: messageBytes);
 
-			channel.BasicConsume(consumer: consumer, queue: replyQueueName, autoAck: true);
 
 			cancellationToken.Register(() => callbackMapper.TryRemove(correlationId, out var tmp));
 			return tcs.Task;

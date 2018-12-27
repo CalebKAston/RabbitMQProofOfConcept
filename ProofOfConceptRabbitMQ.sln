@@ -3,13 +3,15 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.27703.2042
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProofOfConceptRabbitMQ", "ProofOfConceptRabbitMQ\ProofOfConceptRabbitMQ.csproj", "{D2621005-0246-41B9-AA41-EDF43CE31841}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ProofOfConceptRabbitMQ", "ProofOfConceptRabbitMQ\ProofOfConceptRabbitMQ.csproj", "{D2621005-0246-41B9-AA41-EDF43CE31841}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CustomerService", "Services\CustomerService\CustomerService.csproj", "{37BA6CE2-C133-46D2-BEBA-1A34C99EF7B9}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CacheService", "Services\CacheService\CacheService.csproj", "{A6267564-F326-47C0-BE46-5A4515C37637}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ContentService", "Services\ContentService\ContentService.csproj", "{EB7CD52F-BC20-43CB-9579-CF2B80AEB2E2}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RabbitClasses", "RabbitClasses\RabbitClasses.csproj", "{4D5401F4-76E6-4E16-91B5-77F354081A9E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -33,6 +35,10 @@ Global
 		{EB7CD52F-BC20-43CB-9579-CF2B80AEB2E2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EB7CD52F-BC20-43CB-9579-CF2B80AEB2E2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EB7CD52F-BC20-43CB-9579-CF2B80AEB2E2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4D5401F4-76E6-4E16-91B5-77F354081A9E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4D5401F4-76E6-4E16-91B5-77F354081A9E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4D5401F4-76E6-4E16-91B5-77F354081A9E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4D5401F4-76E6-4E16-91B5-77F354081A9E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

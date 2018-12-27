@@ -8,6 +8,10 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using ProofOfConceptRabbitMQ.Models;
 using ProofOfConceptRabbitMQ.ServiceProviders;
+using RabbitClasses.MessagingModels;
+using RabbitClasses.MessagingModels.Cache;
+using RabbitClasses.MessagingModels.Content;
+using RabbitClasses.MessagingModels.Customer;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 
@@ -26,7 +30,7 @@ namespace ProofOfConceptRabbitMQ.Controllers
 			};
 			var model = new HomeViewModel
 			{
-				Content = GetContentAsync(new ContentRequest() { ContentKey = "pageTitle" }).Result,
+				Content = GetContentAsync(new CacheRequest() { ContentKey = "pageTitle" }).Result,
 				Customer = GetCustomerAsync(customerRequest).Result.Customers.FirstOrDefault()
 			};
 
@@ -37,11 +41,44 @@ namespace ProofOfConceptRabbitMQ.Controllers
 		{
 			ViewData["Message"] = "Your application description page.";
 
+			var newCustomer = new CustomerRequest()
+			{
+				CustomerInfo = new CustomerInfo()
+				{
+					Id = 10,
+					Name = "Sally Frederickson",
+					Age = 45,
+					LikesDisney = true
+				}
+			};
+			var response = CreateCustomerAsync(newCustomer).Result;
+
+			var updateCustomer = new CustomerRequest()
+			{
+				CustomerInfo = new CustomerInfo()
+				{
+					Id = 10,
+					Name = "Sally Benion Frederickson",
+					Age = 50,
+					LikesDisney = false
+				}
+			};
+			var updateResponse = UpdateCustomerAsync(updateCustomer).Result;
+
 			return View();
 		}
 
 		public IActionResult Contact()
 		{
+			var customerToDelete = new CustomerRequest()
+			{
+				CustomerInfo = new CustomerInfo()
+				{
+					Id = 10
+				}
+			};
+			var response = DeleteCustomerAsync(customerToDelete);
+
 			ViewData["Message"] = "Your contact page.";
 
 			return View();
@@ -52,12 +89,12 @@ namespace ProofOfConceptRabbitMQ.Controllers
 			return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
 		}
 
-		private static async Task<string> GetContentAsync(ContentRequest request)
+		private static async Task<CacheServiceResponse> GetContentAsync(CacheRequest request)
 		{
-			var contentProvider = new ContentProvider();
+			var cacheProvider = new CacheProvider();
 
-			var response = await contentProvider.GetContentAsync("");
-			contentProvider.Close();
+			var response = await cacheProvider.GetContentAsync(request);
+			cacheProvider.Close();
 
 			return response;
 		}

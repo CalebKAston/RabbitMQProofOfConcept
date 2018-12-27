@@ -12,9 +12,23 @@ namespace ContentService
 {
 	public partial class Form1 : Form
 	{
+		private ContentServiceManager contentService;
 		public Form1()
 		{
 			InitializeComponent();
+		}
+
+		protected override void OnLoad(EventArgs e)
+		{
+			contentService = new ContentServiceManager();
+			base.OnLoad(e);
+		}
+
+		protected override void OnClosing(CancelEventArgs e)
+		{
+			contentService.Close();
+			contentService = null;
+			base.OnClosing(e);
 		}
 	}
 }
