@@ -1,0 +1,55 @@
+version: '3.4'
+
+services:
+  cacheserviceconsole:
+    image: ${DOCKER_REGISTRY}cacheserviceconsole
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: CacheServiceConsole\Dockerfile
+    depends_on:
+      - rabbitmq
+    networks:
+      - default
+
+  contentserviceconsole:
+    image: ${DOCKER_REGISTRY}contentserviceconsole
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: ContentServiceConsole\Dockerfile
+    depends_on:
+      - rabbitmq
+    networks:
+      - default
+
+
+  customerserviceconsole:
+    image: ${DOCKER_REGISTRY}customerserviceconsole
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: CustomerServiceConsole\Dockerfile
+    depends_on:
+      - rabbitmq
+    networks:
+      - default
+
+
+  rabbitmq:
+    image: micdenny/rabbitmq-windows:latest
+    container_name: sb-rabbitmq
+    hostname: rabbitmq
+    restart: unless-stopped
+    stdin_open: true
+    tty: true
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
+networks:
+  default:
+    external:
+      name: nat
+
+  
