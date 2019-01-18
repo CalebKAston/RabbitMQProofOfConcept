@@ -1,4 +1,5 @@
-﻿using RabbitClasses.MessagingModels;
+﻿using CustomerServiceConsole.db;
+using RabbitClasses.MessagingModels;
 using RabbitClasses.MessagingModels.Customer;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
@@ -20,12 +21,23 @@ namespace CustomerServiceConsole
 		private readonly IConnection connection;
 		private readonly IModel channel;
 		private readonly EventingBasicConsumer consumer;
+		private readonly CustomerContextFactory customerContextFactory = new CustomerContextFactory();
 
 		public CustomerServiceManager()
 		{
 			var factory = new ConnectionFactory() { HostName = "rabbitmq" };
 			connection = factory.CreateConnection();
 			channel = connection.CreateModel();
+
+			using(var context = customerContextFactory.CreateDbContext())
+			{
+				// Lazy way to fill the database and ensure it has content
+				if (!context.Customers.Any())
+				{
+					context.Customers.AddRange(Customers);
+					context.SaveChanges();
+				}
+			}
 			
 			channel.QueueDeclare(queue: QUEUE_NAME, durable: false, exclusive: false, autoDelete: false, arguments: null);
 			channel.BasicQos(0, 1, false);
@@ -80,18 +92,22 @@ namespace CustomerServiceConsole
 		{
 			var response = new CustomerServiceResponse();
 
-			IEnumerable<CustomerInfo> customers = Customers.ToArray();
+			using(var context = customerContextFactory.CreateDbContext())
+			{ 
+				IEnumerable<CustomerInfo> customers = context.Customers.ToArray();
 
-			if (request.CustomerInfo.Id.HasValue)
-				customers = customers.Where(customer => customer.Id == request.CustomerInfo.Id);
-			if (!string.IsNullOrEmpty(request.CustomerInfo.Name))
-				customers = customers.Where(customer => customer.Name.Contains(request.CustomerInfo.Name));
-			if (request.CustomerInfo.Age.HasValue)
-				customers = customers.Where(customer => customer.Age == request.CustomerInfo.Age);
-			if (request.CustomerInfo.LikesDisney.HasValue)
-				customers = customers.Where(customer => customer.LikesDisney == request.CustomerInfo.LikesDisney);
+				if (request.CustomerInfo.Id.HasValue)
+					customers = customers.Where(customer => customer.Id == request.CustomerInfo.Id);
+				if (!string.IsNullOrEmpty(request.CustomerInfo.Name))
+					customers = customers.Where(customer => customer.Name.Contains(request.CustomerInfo.Name));
+				if (request.CustomerInfo.Age.HasValue)
+					customers = customers.Where(customer => customer.Age == request.CustomerInfo.Age);
+				if (request.CustomerInfo.LikesDisney.HasValue)
+					customers = customers.Where(customer => customer.LikesDisney == request.CustomerInfo.LikesDisney);
 
-			response.Customers = customers.ToArray();
+				response.Customers = customers.ToArray();
+			}
+
 			response.Success = true;
 
 			return response;
@@ -101,7 +117,11 @@ namespace CustomerServiceConsole
 		{
 			var response = new CustomerServiceResponse();
 
-			Customers.Add(request.CustomerInfo);
+			using(var context = customerContextFactory.CreateDbContext())
+			{
+				context.Customers.Add(request.CustomerInfo);
+				context.SaveChanges();
+			}
 
 			response.Success = true;
 			response.Customers = new CustomerInfo[] { request.CustomerInfo };
@@ -111,22 +131,26 @@ namespace CustomerServiceConsole
 		private CustomerServiceResponse DeleteCustomer(CustomerRequest request)
 		{
 			var response = new CustomerServiceResponse();
-
-			var customer = Customers.SingleOrDefault(user => user.Id == request.CustomerInfo.Id);
-
-			if (customer != null)
+			
+			using(var context = customerContextFactory.CreateDbContext())
 			{
-				Customers.Remove(customer);
+				var customer = context.Customers.SingleOrDefault(user => user.Id == request.CustomerInfo.Id);
 
-				response.Success = true;
-				response.Customers = new CustomerInfo[] { customer };
-			}
-			else
-			{
-				response.Success = false;
-				response.Customers = new CustomerInfo[] { request.CustomerInfo };
-			}
+				if (customer != null)
+				{
+					context.Customers.Remove(customer);
+					context.SaveChanges();
 
+					response.Success = true;
+					response.Customers = new CustomerInfo[] { customer };
+				}
+				else
+				{
+					response.Success = false;
+					response.Customers = new CustomerInfo[] { request.CustomerInfo };
+				}
+
+			}
 			return response;
 		}
 
@@ -134,24 +158,30 @@ namespace CustomerServiceConsole
 		{
 			var response = new CustomerServiceResponse();
 
-			var customerToUpdate = Customers.SingleOrDefault(customer => customer.Id == request.CustomerInfo.Id);
-
-			if (customerToUpdate == null)
+			using(var context = customerContextFactory.CreateDbContext())
 			{
-				response.Success = false;
-				response.Customers = new CustomerInfo[] { request.CustomerInfo };
-				return response;
+				var customerToUpdate = context.Customers.SingleOrDefault(customer => customer.Id == request.CustomerInfo.Id);
+
+				if (customerToUpdate == null)
+				{
+					response.Success = false;
+					response.Customers = new CustomerInfo[] { request.CustomerInfo };
+					return response;
+				}
+
+				if (!string.IsNullOrEmpty(request.CustomerInfo.Name))
+					customerToUpdate.Name = request.CustomerInfo.Name;
+				if (request.CustomerInfo.Age.HasValue)
+					customerToUpdate.Age = request.CustomerInfo.Age;
+				if (request.CustomerInfo.LikesDisney.HasValue)
+					customerToUpdate.LikesDisney = request.CustomerInfo.LikesDisney;
+
+				context.Customers.Update(customerToUpdate);
+				context.SaveChanges();
+
+				response.Success = true;
+				response.Customers = new CustomerInfo[] { customerToUpdate };
 			}
-
-			if (!string.IsNullOrEmpty(request.CustomerInfo.Name))
-				customerToUpdate.Name = request.CustomerInfo.Name;
-			if (request.CustomerInfo.Age.HasValue)
-				customerToUpdate.Age = request.CustomerInfo.Age;
-			if (request.CustomerInfo.LikesDisney.HasValue)
-				customerToUpdate.LikesDisney = request.CustomerInfo.LikesDisney;
-
-			response.Success = true;
-			response.Customers = new CustomerInfo[] { customerToUpdate };
 			return response;
 		}
 
